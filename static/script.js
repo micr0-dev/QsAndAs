@@ -1,6 +1,81 @@
 let adminMode = false;
 let adminPassword = '';
 
+let adminToken = localStorage.getItem('adminToken');
+if (adminToken) {
+    adminMode = true;
+}
+
+let wsConnection = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing WebSocket connection...');
+    if (!wsConnection) {
+        wsConnection = new PostsWebSocket();
+    }
+});
+
+class PostsWebSocket {
+    constructor() {
+        this.connect();
+        this.notificationSound = new Audio('/static/notification.mp3');
+    }
+
+    connect() {
+        console.log('Connecting to WebSocket...');
+        this.ws = new WebSocket(`ws://${window.location.host}/ws`);
+
+        this.ws.onopen = () => {
+            console.log('WebSocket connected');
+        };
+
+        this.ws.onmessage = this.handleMessage.bind(this);
+
+        this.ws.onclose = () => {
+            console.log('WebSocket disconnected, attempting to reconnect...');
+            setTimeout(() => this.connect(), 1000);
+        };
+
+        this.ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    handleMessage(event) {
+        const data = JSON.parse(event.data);
+
+        switch (data.type) {
+            case 'new_question':
+                this.handleNewQuestion(data.payload);
+                break;
+            case 'new_answer':
+                this.handleNewAnswer(data.payload);
+                break;
+        }
+    }
+
+    handleNewQuestion(payload) {
+        // Only notify admin of new questions
+        if (adminMode) {
+            this.playNotification();
+            refreshQuestions();
+        }
+    }
+
+    handleNewAnswer(payload) {
+        // Everyone gets notified of new answers
+        this.playNotification();
+        refreshQuestions();
+    }
+
+    playNotification() {
+        this.notificationSound.play().catch(err => {
+            console.log('Could not play notification sound:', err);
+        });
+    }
+}
+
+
 const QuestionStatus = {
     getAsked: () => {
         const asked = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
@@ -241,7 +316,7 @@ async function fetchQuestion(id) {
 // Modified refreshQuestions function
 async function refreshQuestions() {
     const url = adminMode
-        ? `/questions?all=true&password=${encodeURIComponent(adminPassword)}`
+        ? `/questions?all=true`
         : '/questions';
 
     try {
@@ -252,7 +327,7 @@ async function refreshQuestions() {
         const validAskedQuestions = askedQuestionsResults.filter(q => q && !q.answered);
 
         // Then fetch the main feed
-        const response = await fetch(url);
+        const response = await fetchWithAuth(url);
         const data = await response.json();
 
         QuestionStatus.cleanupAnswered(data.questions);
@@ -277,10 +352,16 @@ async function refreshQuestions() {
         const requestedQuestions = validAskedQuestions;
         const unreadQuestions = [];
         const readQuestions = [];
+        const pendingQuestions = []; // New array for unanswered questions
 
-        // Only sort answered questions into read/unread
+        // Sort all questions
         data.questions.forEach(q => {
-            if (q.answered) {  // Only check read status for answered questions
+            if (!q.answered) {
+                if (!requestedQuestions.some(rq => rq.id === q.id)) {
+                    // Only add to pending if it's not already in requested
+                    pendingQuestions.push(q);
+                }
+            } else {
                 if (ReadStatus.isRead(q.id)) {
                     readQuestions.push(q);
                 } else {
@@ -305,6 +386,26 @@ async function refreshQuestions() {
             });
 
             container.appendChild(requestedSection);
+        }
+
+        // Add pending section if there are pending questions
+        if (adminMode && pendingQuestions.length > 0) {
+            const pendingSection = document.createElement('div');
+            pendingSection.className = 'questions-section pending-section';
+            pendingSection.innerHTML = `
+                <div class="section-title">
+                    Pending Questions
+                    <span class="pending-count">${pendingQuestions.length}</span>
+                </div>
+            `;
+
+            pendingQuestions.forEach(q => {
+                const card = createQuestionCard(q);
+                card.classList.add('pending');
+                pendingSection.appendChild(card);
+            });
+
+            container.appendChild(pendingSection);
         }
 
         // Add unread section if there are unread questions
@@ -379,41 +480,131 @@ function updateUnreadCount() {
 // Initialize theme when page loads
 document.addEventListener('DOMContentLoaded', initTheme);
 
-function askQuestion() {
-    const question = document.getElementById('question-input').value;
+async function askQuestion() {
+    const questionInput = document.getElementById('question-input');
+    const question = questionInput.value;
     if (!question) return;
 
-    fetch('/ask', {
-        method: 'POST',
-        body: new URLSearchParams({ question }),
-    })
-        .then(response => response.json())
-        .then(data => {
-            QuestionStatus.addAsked(data.id);
-            document.getElementById('question-input').value = '';
-            refreshQuestions();
+    try {
+        const response = await fetch('/ask', {
+            method: 'POST',
+            body: new URLSearchParams({ question }),
         });
+
+        if (response.status === 429) {
+            // Rate limit exceeded
+            const data = await response.json();
+            showRateLimitError(data);
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        QuestionStatus.addAsked(data.id);
+        questionInput.value = '';
+        refreshQuestions();
+
+    } catch (error) {
+        console.error('Error asking question:', error);
+        showError('Failed to submit question. Please try again.');
+    }
+}
+
+function showRateLimitError(data) {
+    const message = `
+        You've reached the limit of ${data.limit} questions per ${data.period}.
+        Please try again in ${formatDuration(data.retryAfter)}.
+    `;
+
+    // Create or update error message
+    let errorDiv = document.querySelector('.rate-limit-error');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.className = 'rate-limit-error';
+        document.querySelector('.ask-form').appendChild(errorDiv);
+    }
+
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+
+    // Hide after 5 seconds
+    setTimeout(() => {
+        errorDiv.style.display = 'none';
+    }, 10000);
+}
+
+function formatDuration(durationStr) {
+    const duration = parseDuration(durationStr);
+    if (duration < 60) {
+        return `${Math.ceil(duration)} seconds`;
+    }
+    if (duration < 3600) {
+        return `${Math.ceil(duration / 60)} minutes`;
+    }
+    return `${Math.ceil(duration / 3600)} hours`;
+}
+
+function parseDuration(durationStr) {
+    // Simple duration parser for "1h2m3s" format
+    const matches = durationStr.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+    if (!matches) return 0;
+
+    const hours = parseInt(matches[1] || 0);
+    const minutes = parseInt(matches[2] || 0);
+    const seconds = parseInt(matches[3] || 0);
+
+    return hours * 3600 + minutes * 60 + seconds;
 }
 
 function answerQuestion(id) {
     const answer = document.getElementById(`answer-${id}`).value;
     if (!answer) return;
 
-    fetch('/answer', {
-        method: 'POST',
-        body: new URLSearchParams({
-            id,
-            answer,
-            password: adminPassword
-        }),
-    })
-        .then(() => refreshQuestions());
-}
+    const formData = new URLSearchParams({
+        id: id,
+        answer: answer,
+    });
 
-function toggleAdminMode() {
-    adminPassword = document.getElementById('admin-password').value;
-    adminMode = !adminMode;
-    refreshQuestions();
+    console.log('Form data:', formData.toString());
+
+    fetchWithAuth('/answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData,
+    })
+        .then(async response => {
+            if (!response.ok) {
+                // Try to get error message
+                const text = await response.text();
+                console.log('Error response:', text);
+            }
+
+            if (response.ok) {
+                const newToken = response.headers.get('X-Admin-Token');
+                if (newToken) {
+                    adminToken = newToken;
+                    localStorage.setItem('adminToken', newToken);
+                }
+                refreshQuestions();
+            } else if (response.status === 401) {
+                console.log('Authentication failed');
+                adminToken = null;
+                localStorage.removeItem('adminToken');
+                adminMode = false;
+                alert('Admin session expired. Please log in again.');
+                // Refresh to clear admin UI
+                refreshQuestions();
+            }
+        })
+        .catch(error => {
+            console.error('Error answering question:', error);
+            alert('Failed to submit answer. Please try again.');
+        });
 }
 
 // Initial load
@@ -427,14 +618,6 @@ function toggleAdminPanel() {
     panel.classList.toggle('visible');
     adminPanelVisible = !adminPanelVisible;
 }
-
-// Keyboard shortcut
-document.addEventListener('keydown', function (e) {
-    if (e.ctrlKey && e.altKey && e.key === 'a') {
-        e.preventDefault();
-        toggleAdminPanel();
-    }
-});
 
 // Triple-click on stats
 let clickCount = 0;
@@ -530,8 +713,8 @@ const PendingChanges = {
         ReadStatus.set(status);
         this.readQuestions.clear();
 
-        // Refresh the UI
         refreshQuestions();
+
     }
 };
 
@@ -692,3 +875,230 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+
+
+
+function toggleAdminMode() {
+    const password = document.getElementById('admin-password').value;
+
+    if (adminToken) {
+        // Try with existing token first
+        fetchWithAuth('/questions?all=true')
+            .then(response => {
+                if (!response.ok) {
+                    // Token invalid, try with password
+                    tryPasswordAuth(password);
+                }
+            })
+            .catch(() => tryPasswordAuth(password));
+    } else {
+        tryPasswordAuth(password);
+    }
+}
+
+function tryPasswordAuth(password) {
+    fetch('/questions?all=true&password=' + encodeURIComponent(password))
+        .then(response => {
+            if (response.ok) {
+                const token = response.headers.get('X-Admin-Token');
+                if (token) {
+                    adminToken = token;
+                    localStorage.setItem('adminToken', token);
+                }
+                adminMode = true;
+                refreshQuestions();
+            }
+        });
+}
+
+function fetchWithAuth(url, options = {}) {
+
+    if (adminToken) {
+        options.headers = {
+            ...options.headers,
+            'Authorization': `Bearer ${adminToken}`
+        };
+        console.log('Added auth headers:', options.headers);
+    }
+    return fetch(url, options);
+}
+
+class KeyboardShortcuts {
+    constructor() {
+        this.shortcuts = [
+            { keys: ['Alt', 'N'], description: 'New question', action: () => this.focusQuestionInput() },
+            { keys: ['Ctrl', 'Enter'], description: 'Submit question/answer', action: () => this.submitCurrent() },
+            { keys: ['?'], description: 'Show shortcuts', action: () => this.toggleShortcutsOverlay() },
+            { keys: ['Esc'], description: 'Close overlay / Blur input', action: () => this.handleEscape() },
+            { keys: ['Alt', 'A'], description: 'Toggle admin mode', action: () => this.toggleAdmin() },
+        ];
+
+        this.setupOverlay();
+        this.bindShortcuts();
+    }
+
+    setupOverlay() {
+        // Create shortcuts overlay
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'shortcuts-overlay';
+        this.overlay.innerHTML = `
+            <div class="shortcuts-modal">
+                <h2>Keyboard Shortcuts</h2>
+                <div class="shortcuts-list">
+                    ${this.shortcuts.map(s => `
+                        <div class="shortcut-key">
+                            ${s.keys.map(k => `<span class="key">${k}</span>`).join('+')}
+                        </div>
+                        <div class="shortcut-description">${s.description}</div>
+                    `).join('')}
+                </div>
+                <small>Press ? to toggle this overlay</small>
+            </div>
+        `;
+        document.body.appendChild(this.overlay);
+
+        // Close on click outside modal
+        this.overlay.addEventListener('click', (e) => {
+            if (e.target === this.overlay) {
+                this.hideShortcutsOverlay();
+            }
+        });
+    }
+
+    bindShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Submit with Ctrl+Enter
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                const focused = document.activeElement;
+                if (focused.id === 'question-input') {
+                    askQuestion();
+                } else if (focused.id?.startsWith('answer-')) {
+                    const questionId = focused.id.replace('answer-', '');
+                    answerQuestion(questionId);
+                }
+            }
+
+            // Don't trigger shortcuts when typing in input fields
+            if (e.target.matches('input, textarea') && e.key !== 'Escape') {
+                return;
+            }
+
+            // Show shortcuts overlay
+            if (e.key === '?' && !e.ctrlKey && !e.altKey) {
+                e.preventDefault();
+                this.toggleShortcutsOverlay();
+                return;
+            }
+
+            // Focus question input with Alt+N
+            if (e.altKey && e.key.toLowerCase() === 'n') {
+                e.preventDefault();
+                document.getElementById('question-input')?.focus();
+            }
+
+            // Toggle admin panel with Alt+A
+            if (e.altKey && e.key.toLowerCase() === 'a') {
+                e.preventDefault();
+                toggleAdminPanel();
+            }
+
+            // Blur inputs with Escape
+            if (e.key === 'Escape') {
+                document.activeElement.blur();
+            }
+
+            // Handle other shortcuts
+            this.shortcuts.forEach(shortcut => {
+                if (this.matchesShortcut(e, shortcut.keys)) {
+                    e.preventDefault();
+                    shortcut.action();
+                }
+            });
+        });
+    }
+
+    matchesShortcut(event, keys) {
+        const pressedKeys = [];
+        if (event.ctrlKey) pressedKeys.push('Ctrl');
+        if (event.altKey) pressedKeys.push('Alt');
+        if (event.shiftKey) pressedKeys.push('Shift');
+        if (!['Ctrl', 'Alt', 'Shift'].includes(event.key)) {
+            pressedKeys.push(event.key);
+        }
+
+        return JSON.stringify(pressedKeys) === JSON.stringify(keys);
+    }
+
+    focusQuestionInput() {
+        document.getElementById('question-input')?.focus();
+    }
+
+    submitCurrent() {
+        const focused = document.activeElement;
+        if (focused.id === 'question-input') {
+            askQuestion();
+        } else if (focused.id?.startsWith('answer-')) {
+            const questionId = focused.id.replace('answer-', '');
+            answerQuestion(questionId);
+        }
+    }
+
+    toggleShortcutsOverlay() {
+        this.overlay.classList.toggle('show');
+    }
+
+    hideShortcutsOverlay() {
+        this.overlay.classList.remove('show');
+    }
+
+    handleEscape() {
+        if (this.overlay.classList.contains('show')) {
+            this.hideShortcutsOverlay();
+        } else {
+            document.activeElement.blur();
+        }
+    }
+
+    toggleAdmin() {
+        const adminPanel = document.querySelector('.admin-panel');
+        if (adminPanel) {
+            toggleAdminPanel();
+        }
+    }
+}
+
+// Initialize keyboard shortcuts when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new KeyboardShortcuts();
+});
+
+function createAttributionPanel() {
+    const panel = document.createElement('div');
+    panel.className = 'attribution-panel';
+
+    panel.innerHTML = `
+        <a href="https://github.com/yourusername/project" 
+           class="attribution-link" 
+           target="_blank" 
+           title="View source on GitHub">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+        </a>
+        
+        <a href="https://ko-fi.com/yourusername" 
+           class="attribution-link" 
+           target="_blank" 
+           title="Support on Ko-fi">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/>
+            </svg>
+        </a>
+    `;
+
+    document.body.appendChild(panel);
+}
+
+// Initialize when the page loads
+document.addEventListener('DOMContentLoaded', createAttributionPanel);

@@ -463,6 +463,7 @@ button {
 /* Optional: animate the input and button inside */
 .admin-panel input,
 .admin-panel button {
+    display: none;
     opacity: 0;
     transition: opacity 0.3s ease 0.1s;
     /* slight delay for staggered effect */
@@ -470,6 +471,7 @@ button {
 
 .admin-panel.visible input,
 .admin-panel.visible button {
+    display: block;
     opacity: 1;
 }
 
@@ -576,6 +578,10 @@ button {
 
 .read-section .section-title::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+}
+
+.pending-section .section-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 6v6m0 0v6m0-6h6m-6 0H6'/%3E%3C/svg%3E");
 }
 
 /* Add subtle divider between sections */
@@ -762,5 +768,125 @@ button {
 @media (prefers-reduced-motion: reduce) {
     .section-bar {
         transition: none;
+    }
+}
+
+.rate-limit-error {
+    background: var(--surface);
+    color: #ff6b6b;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #ff6b6b;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.shortcuts-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.shortcuts-modal {
+    background: var(--surface);
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.shortcuts-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.shortcut-key {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.key {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.show {
+    display: flex;
+}
+
+.attribution-panel {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.5rem;
+    border-radius: 12px;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+}
+
+.attribution-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 0 0.5rem;
+}
+
+.attribution-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, transform 0.3s ease, opacity 0.3s ease;
+}
+
+.attribution-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.attribution-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Optional: Hide on mobile or make it smaller */
+@media (max-width: 768px) {
+    .attribution-panel {
+        bottom: 0.5rem;
+        right: 0.5rem;
+        font-size: 0.8rem;
     }
 }

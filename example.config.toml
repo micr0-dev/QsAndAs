@@ -6,6 +6,10 @@ base_url = "http://localhost:8080"
 [admin]
 password = "adminpassword"
 
+[limits]
+questions_per_hour = 6
+questions_burst = 2
+
 [ui]
 site_name = "Anonymous Q&A"
 description = "Ask me anything, anonymously!"
@@ -13,8 +17,6 @@ timeline = true
 read_tracking = true
 
 [ui.theme]
-primary = "#2a2b2f"
-secondary = "#1d1e22"
 text = "#ffffff"
 text_muted = "#9ca3af"
 surface = "#2a2b2f"

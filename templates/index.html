@@ -4,6 +4,14 @@
 <head>
     <title>{{.SiteName}}</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        :root {
+            --text: {{.Theme.Text}};
+            --text-secondary: {{.Theme.TextMuted}};
+            --surface: {{.Theme.Surface}};
+            --background: {{.Theme.Background}};
+        }
+    </style>
     <meta name="description" content="{{.Description}}">
 </head>
 

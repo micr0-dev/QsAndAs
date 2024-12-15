@@ -2,14 +2,18 @@ package main
 
 import (
 	"log"
+	"sync"
 
 	"github.com/BurntSushi/toml"
+	"github.com/fsnotify/fsnotify"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Config struct {
 	Server ServerConfig `toml:"server"`
 	Admin  AdminConfig  `toml:"admin"`
 	UI     UIConfig     `toml:"ui"`
+	Limits RateLimits   `toml:"limits"`
 }
 
 type ServerConfig struct {
@@ -19,7 +23,8 @@ type ServerConfig struct {
 }
 
 type AdminConfig struct {
-	Password string `toml:"password"`
+	Password      string `toml:"password"`
+	TokenDuration string `toml:"token_duration"`
 }
 
 type UIConfig struct {
@@ -31,15 +36,22 @@ type UIConfig struct {
 }
 
 type UITheme struct {
-	Primary    string `toml:"primary"`
-	Secondary  string `toml:"secondary"`
 	Text       string `toml:"text"`
 	TextMuted  string `toml:"text_muted"`
 	Surface    string `toml:"surface"`
 	Background string `toml:"background"`
 }
 
-var config Config
+type RateLimits struct {
+	QuestionsPerHour int `toml:"questions_per_hour"`
+	QuestionsBurst   int `toml:"questions_burst"`
+}
+
+var (
+	config     Config
+	configLock sync.RWMutex
+	configPath = "config.toml"
+)
 
 func loadConfig(path string) Config {
 	var conf Config
@@ -47,4 +59,54 @@ func loadConfig(path string) Config {
 		log.Fatal("Failed to load config: ", err)
 	}
 	return conf
+}
+func watchConfig() {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal("Failed to create watcher:", err)
+	}
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					done <- true
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					newConfig := loadConfig(configPath)
+					configLock.Lock()
+					config = newConfig
+					adminHash, _ = bcrypt.GenerateFromPassword(
+						[]byte(config.Admin.Password),
+						bcrypt.DefaultCost,
+					)
+					configLock.Unlock()
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					done <- true
+					return
+				}
+				log.Println("Config watch error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Add(configPath)
+	if err != nil {
+		log.Fatal("Failed to add config watcher:", err)
+	}
+
+	<-done
+	watcher.Close()
+}
+
+// Helper function to safely get config
+func getConfig() Config {
+	configLock.RLock()
+	defer configLock.RUnlock()
+	return config
 }
