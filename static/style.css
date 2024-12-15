@@ -1,0 +1,766 @@
+:root {
+    --background: #1d1e22;
+    --surface: #2a2b2f;
+    --text: #ffffff;
+    --text-secondary: #9ca3af;
+
+    /* These will be set via JavaScript */
+    --dynamic-gradient: linear-gradient(45deg, #BC3982, #BC3982);
+    --dynamic-color: #BC3982;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.container>h1 {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+    background: var(--dynamic-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    transition: background 0.5s ease;
+}
+
+.container>h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: var(--dynamic-gradient);
+    border-radius: 2px;
+}
+
+.ask-form {
+    background: var(--surface);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.ask-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--dynamic-gradient);
+}
+
+textarea {
+    width: 100%;
+    min-height: 120px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    color: var(--text);
+    font-size: 1rem;
+    resize: vertical;
+    margin-bottom: 1rem;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--dynamic-color);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+button {
+    background: var(--dynamic-gradient);
+    color: var(--text);
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: transform 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+}
+
+.admin-panel {
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.admin-panel input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem;
+    border-radius: 8px;
+    color: var(--text);
+}
+
+.question-card {
+    background: var(--card-bg, var(--surface));
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+}
+
+.question-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, var(--card-color-1), var(--card-color-2));
+    opacity: 0.1;
+    z-index: -1;
+}
+
+.question-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.id-hash {
+    width: 24px;
+    height: 24px;
+    padding: 5px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.id-hash svg {
+    width: 14px;
+    height: 14px;
+}
+
+.id-value {
+    display: flex;
+    gap: 0.1rem;
+}
+
+.id-first-part,
+.id-second-part {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.question-timestamp {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.question-content {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 3px solid var(--card-color-1);
+}
+
+.answer-content {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 3px solid var(--card-color-2);
+}
+
+.stats-bar {
+    background: var(--surface);
+    padding: 1rem;
+    border-radius: 15px;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-around;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    background: var(--dynamic-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: bold;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+button {
+    background: #00000048;
+}
+
+
+.container>h1,
+.stat-value {
+    position: relative;
+    background: linear-gradient(45deg,
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)),
+        var(--dynamic-gradient);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* Make the original text same as background */
+    animation: gradientAnimation 15s ease infinite;
+}
+
+.container>h1::before,
+.stat-value::before {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg,
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)),
+        var(--dynamic-gradient);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradientAnimation 15s ease infinite;
+}
+
+.container>h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(45deg,
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)),
+        var(--dynamic-gradient);
+    background-size: 200% 200%;
+    border-radius: 2px;
+    animation: gradientAnimation 15s ease infinite;
+}
+
+/* Animated gradient line in ask form */
+.ask-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(45deg,
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)),
+        var(--dynamic-gradient);
+    background-size: 200% 200%;
+    animation: gradientAnimation 15s ease infinite;
+}
+
+
+/* Question and Answer icons/headers */
+.question-content,
+.answer-content {
+    position: relative;
+}
+
+.content-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.content-header svg {
+    width: 18px;
+    height: 18px;
+}
+
+.question-icon {
+    color: var(--card-color-1);
+}
+
+.answer-icon {
+    color: var(--card-color-2);
+}
+
+
+/* Markdown content headings */
+.question-content h1,
+.question-content h2,
+.question-content h3,
+.answer-content h1,
+.answer-content h2,
+.answer-content h3 {
+    color: var(--text);
+    margin: 1rem 0;
+    font-size: 1.5em;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .stats-bar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Default animations */
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+    /* Remove all animations */
+    h1,
+    .stat-value,
+    button,
+    h1::after,
+    .ask-form::before {
+        animation: none;
+        background-size: 100% 100%;
+        transition: none;
+    }
+
+    /* Remove any other transitions */
+    * {
+        transition: none !important;
+    }
+
+    /* Optional: Simplify hover effects */
+    button:hover {
+        transform: none;
+    }
+
+    .question-card {
+        transition: none;
+    }
+
+    .admin-panel,
+    .admin-panel input,
+    .admin-panel button {
+        transition: none !important;
+    }
+}
+
+.admin-panel {
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+}
+
+
+.admin-panel.visible {
+    opacity: 1;
+    height: 100px;
+    /* or whatever height you need */
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    transform: translateY(0);
+}
+
+/* Optional: animate the input and button inside */
+.admin-panel input,
+.admin-panel button {
+    opacity: 0;
+    transition: opacity 0.3s ease 0.1s;
+    /* slight delay for staggered effect */
+}
+
+.admin-panel.visible input,
+.admin-panel.visible button {
+    opacity: 1;
+}
+
+.question-card {
+    position: relative;
+}
+
+.questions-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.unread-badge {
+    background: var(--card-color-1);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.unread-count {
+    background: var(--card-color-1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
+/* Sections styling */
+.questions-section {
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: sticky;
+    top: 1rem;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2)
+}
+
+.unread-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: auto;
+    backdrop-filter: blur(5px);
+}
+
+/* Add icons to sections */
+.section-title::before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.8;
+}
+
+.unread-section .section-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 6v6m0 0v6m0-6h6m-6 0H6'/%3E%3C/svg%3E");
+}
+
+.read-section .section-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+}
+
+/* Add subtle divider between sections */
+.questions-section+.questions-section::before {
+    content: '';
+    position: absolute;
+    top: -1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50%;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent);
+}
+
+/* Enhance the spacing between cards within sections */
+.questions-section .question-card:not(:last-child) {
+    margin-bottom: 1.5rem;
+}
+
+/* Add a subtle transition effect between sections */
+.questions-section {
+    transition: opacity 0.3s ease;
+}
+
+.questions-section:hover {
+    opacity: 1;
+}
+
+.questions-section:not(:hover) {
+    opacity: 0.95;
+}
+
+/* Optional: Add a subtle animation when sections appear */
+@keyframes sectionAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.questions-section {
+    animation: sectionAppear 0.3s ease forwards;
+}
+
+
+.requested-section .section-title::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'/%3E%3C/svg%3E");
+}
+
+.pending-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: auto;
+    backdrop-filter: blur(5px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .section-title {
+        padding: 0.8rem;
+        font-size: 1rem;
+        position: relative;
+        top: 0;
+    }
+
+    .unread-count {
+        padding: 0.15rem 0.6rem;
+    }
+}
+
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+
+    .section-title,
+    .questions-section {
+        animation: none;
+        transition: none;
+    }
+}
+
+.timeline {
+    position: fixed;
+    left: 20px;
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+/* The main line */
+.timeline-line {
+    position: absolute;
+    left: 0;
+    width: 3px;
+    transform: translateX(1px);
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1px;
+}
+
+/* The progress indicator */
+.scroll-progress {
+    position: absolute;
+    left: -4px;
+    width: 16px;
+    height: 100%;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+
+.scroll-sections {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    padding: 20px 0;
+    box-sizing: border-box;
+}
+
+.section-bar {
+    position: absolute;
+    left: 0;
+    width: 8px;
+    transform: translateX(3px);
+    background: linear-gradient(to bottom, var(--start-color), var(--end-color));
+    border-radius: 99px;
+    transition: all 0.1s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Individual hover effect for each section */
+.section-bar:hover {
+    width: 14px;
+    transform: translateX(0px);
+}
+
+/* Enhanced hover effect */
+.section-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: inherit;
+}
+
+.section-bar:hover::after {
+    opacity: 0.3;
+}
+
+/* Clip container for scroll progress */
+.scroll-clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    clip-path: inset(0 0 var(--scroll-clip) 0);
+}
+
+/* Make timeline line respect the clip mask */
+.timeline-line {
+    clip-path: inset(0 0 var(--scroll-clip) 0);
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .section-bar {
+        transition: none;
+    }
+}

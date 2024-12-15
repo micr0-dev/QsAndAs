@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{.SiteName}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <meta name="description" content="{{.Description}}">
+</head>
+
+<body>
+    <div class="container">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="total-questions">0</div>
+                <div class="stat-label">Total Questions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="answered-questions">0</div>
+                <div class="stat-label">Answered</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="response-rate">0%</div>
+                <div class="stat-label">Response Rate</div>
+            </div>
+        </div>
+
+        <h1>{{.SiteName}}</h1>
+
+        <div class="ask-form">
+            <textarea id="question-input" placeholder="Ask your question here... "></textarea>
+            <button onclick="askQuestion()">Submit Question</button>
+        </div>
+
+        <div class="admin-panel">
+            <input type="password" id="admin-password" placeholder="Admin password">
+            <button onclick="toggleAdminMode()">Toggle Admin Mode</button>
+        </div>
+
+        <div id="questions-container"></div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
