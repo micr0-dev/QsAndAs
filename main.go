@@ -64,9 +64,6 @@ func init() {
 		log.Fatal(err)
 	}
 
-	// Generate admin password hash (change 'adminpassword' to your desired password)
-	adminHash, _ = bcrypt.GenerateFromPassword([]byte("adminpassword"), bcrypt.DefaultCost)
-
 	// Initialize rate limiter
 	questionsPerHour := float64(config.Limits.QuestionsPerHour)
 	rateLimiter = NewIPRateLimiter(rate.Limit(questionsPerHour/3600), config.Limits.QuestionsBurst)
