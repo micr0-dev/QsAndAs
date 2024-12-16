@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -94,7 +95,7 @@ func main() {
 
 	r.HandleFunc("/ws", handleWebSocket)
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.Server.Port), r))
 }
 
 // Add config handler for UI
