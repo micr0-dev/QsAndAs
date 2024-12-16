@@ -5,6 +5,7 @@ base_url = "http://localhost:8080"
 
 [admin]
 password = "adminpassword"
+token_duration = "720h"
 
 [limits]
 questions_per_hour = 6
