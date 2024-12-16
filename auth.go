@@ -56,7 +56,6 @@ func adminAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			isValid := validateToken(token)
 
 			if isValid {
-				log.Println("Token is valid, proceeding")
 				next(w, r)
 				return
 			}

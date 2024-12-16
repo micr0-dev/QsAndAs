@@ -1078,7 +1078,7 @@ function createAttributionPanel() {
     panel.className = 'attribution-panel';
 
     panel.innerHTML = `
-        <a href="https://github.com/yourusername/project" 
+        <a href="https://github.com/micr0-dev/QsAndAs" 
            class="attribution-link" 
            target="_blank" 
            title="View source on GitHub">
@@ -1087,7 +1087,7 @@ function createAttributionPanel() {
             </svg>
         </a>
         
-        <a href="https://ko-fi.com/yourusername" 
+        <a href="https://ko-fi.com/micr0byte" 
            class="attribution-link" 
            target="_blank" 
            title="Support on Ko-fi">
