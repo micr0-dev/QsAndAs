@@ -26,4 +26,4 @@ go.work.sum
 
 config.toml
 
-data/questions.db
+data/
