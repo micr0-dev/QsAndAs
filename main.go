@@ -97,6 +97,8 @@ func main() {
 
 	r.HandleFunc("/ws", handleWebSocket)
 
+	r.HandleFunc("/questions/{id}", adminAuthMiddleware(handleDeleteQuestion)).Methods("DELETE")
+
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.Server.Port), r))
 }
 
@@ -350,4 +352,18 @@ func handleGetQuestions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+func handleDeleteQuestion(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	// Delete from database
+	_, err := db.Exec("DELETE FROM questions WHERE id = ?", id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

@@ -214,7 +214,17 @@ function createQuestionCard(q) {
         </div>
     `;
 
+    const deleteButton = adminMode ? `
+        <button class="delete-button" onclick="deleteQuestion('${q.id}')">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
+    ` : '';
+
+
     let html = `
+        ${deleteButton}
         ${idHtml}
         <div class="question-timestamp" data-timestamp="${q.timestamp}">
             ${formatDate(q.timestamp)}
@@ -329,6 +339,17 @@ async function refreshQuestions() {
         const askedQuestionsResults = await Promise.all(askedQuestionsPromises);
         const validAskedQuestions = askedQuestionsResults.filter(q => q && !q.answered);
 
+        const savedAnswers = {};
+        document.querySelectorAll('[id^="answer-"]').forEach(textarea => {
+            const questionId = textarea.id.replace('answer-', '');
+            const content = textarea.value;
+            if (content) {
+                savedAnswers[questionId] = content;
+                DraftAnswers.save(questionId, content); // Save to localStorage
+            }
+        });
+
+
         // Then fetch the main feed
         const response = await fetchWithAuth(url);
         const data = await response.json();
@@ -341,11 +362,8 @@ async function refreshQuestions() {
         const container = document.getElementById('questions-container');
         container.innerHTML = '';
 
-        //clear the profile card
-        const profileCard = document.querySelector('.profile-card');
-        if (profileCard) {
-            profileCard.remove();
-        }
+        //clear the profile card (multiple if multiple exists)
+        document.querySelectorAll('.profile-card').forEach(card => card.remove());
 
         // Create sections
         const requestedSection = document.createElement('div');
@@ -460,6 +478,23 @@ async function refreshQuestions() {
             newProfileCard,
             document.querySelector('.ask-form')
         );
+
+        Object.keys(savedAnswers).forEach(questionId => {
+            const textarea = document.getElementById(`answer-${questionId}`);
+            if (textarea) {
+                textarea.value = savedAnswers[questionId];
+            }
+        });
+
+        document.querySelectorAll('[id^="answer-"]').forEach(textarea => {
+            const questionId = textarea.id.replace('answer-', '');
+            if (!savedAnswers[questionId]) { // Only if not already restored
+                const draft = DraftAnswers.get(questionId);
+                if (draft) {
+                    textarea.value = draft;
+                }
+            }
+        });
 
         // Update dynamic colors with all questions
         updateDynamicColors(allQuestions);
@@ -608,6 +643,7 @@ function answerQuestion(id) {
                     adminToken = newToken;
                     localStorage.setItem('adminToken', newToken);
                 }
+                DraftAnswers.clear(id);
                 refreshQuestions();
             } else if (response.status === 401) {
                 console.log('Authentication failed');
@@ -1329,4 +1365,57 @@ function createProfileCard(profile) {
     `;
 
     return card;
+}
+
+const DraftAnswers = {
+    save: (questionId, content) => {
+        const drafts = JSON.parse(localStorage.getItem('answerDrafts') || '{}');
+        if (content) {
+            drafts[questionId] = content;
+        } else {
+            delete drafts[questionId]; // Remove if empty
+        }
+        localStorage.setItem('answerDrafts', JSON.stringify(drafts));
+    },
+
+    get: (questionId) => {
+        const drafts = JSON.parse(localStorage.getItem('answerDrafts') || '{}');
+        return drafts[questionId] || '';
+    },
+
+    clear: (questionId) => {
+        const drafts = JSON.parse(localStorage.getItem('answerDrafts') || '{}');
+        delete drafts[questionId];
+        localStorage.setItem('answerDrafts', JSON.stringify(drafts));
+    }
+};
+
+document.addEventListener('DOMContentLoaded', setupAnswerAutosave);
+
+// Add delete function
+async function deleteQuestion(id) {
+    if (!confirm('Are you sure you want to delete this question?')) {
+        return;
+    }
+
+    try {
+        const response = await fetchWithAuth(`/questions/${id}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            const card = document.querySelector(`[data-question-id="${id}"]`);
+            card.style.opacity = '0';
+            card.style.transform = 'translateX(20px)';
+
+            setTimeout(() => {
+                refreshQuestions();
+            }, 300); // Match this with the CSS transition duration
+        } else {
+            throw new Error('Failed to delete question');
+        }
+    } catch (error) {
+        console.error('Error deleting question:', error);
+        alert('Failed to delete question. Please try again.');
+    }
 }

@@ -1292,3 +1292,38 @@ button {
 .social-link[data-platform="pinterest"]:hover {
     background: #E60023;
 }
+
+.delete-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 0, 0, 0.1);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 2;
+    opacity: 0;
+    transform: translateX(10px);
+}
+
+.question-card:hover .delete-button {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.delete-button:hover {
+    background: rgba(255, 0, 0, 0.2);
+    transform: translateY(-2px) !important;
+}
+
+.delete-button svg {
+    color: #ff6b6b;
+    width: 20px;
+    height: 20px;
+}
+
+.question-card {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
