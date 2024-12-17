@@ -3,6 +3,18 @@ port = 8080
 host = "0.0.0.0"
 base_url = "http://localhost:8080"
 
+[profile]
+username = "Micr0byte"
+bio = "hi! ask me anything about programming, technology, or life in general!"
+avatar = "https://micr0.dev/d8fa3f2c4b09d430.png"
+
+[profile.social]
+github = "https://github.com/micr0-dev"
+bluesky = "https://bsky.app/profile/micr0.dev"
+kofi = "https://ko-fi.com/micr0byte"
+mastodon = "https://fuzzies.wtf/@micr0"
+website = "https://micr0.dev"
+
 [admin]
 password = "adminpassword"
 token_duration = "720h"

@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `toml:"server"`
-	Admin  AdminConfig  `toml:"admin"`
-	UI     UIConfig     `toml:"ui"`
-	Limits RateLimits   `toml:"limits"`
+	Server  ServerConfig  `toml:"server"`
+	Admin   AdminConfig   `toml:"admin"`
+	UI      UIConfig      `toml:"ui"`
+	Limits  RateLimits    `toml:"limits"`
+	Profile ProfileConfig `toml:"profile"`
 }
 
 type ServerConfig struct {
@@ -45,6 +46,14 @@ type UITheme struct {
 type RateLimits struct {
 	QuestionsPerHour int `toml:"questions_per_hour"`
 	QuestionsBurst   int `toml:"questions_burst"`
+}
+
+type ProfileConfig struct {
+	Username    string            `toml:"username"`
+	Bio         string            `toml:"bio"`
+	Avatar      string            `toml:"avatar"`
+	AccentColor string            `toml:"accent_color"`
+	Social      map[string]string `toml:"social"`
 }
 
 var (

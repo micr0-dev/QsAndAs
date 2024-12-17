@@ -106,17 +106,19 @@ func handleConfig(w http.ResponseWriter, r *http.Request) {
 
 	// Only send safe config values to UI
 	uiConfig := struct {
-		SiteName     string  `json:"siteName"`
-		Description  string  `json:"description"`
-		Timeline     bool    `json:"timeline"`
-		ReadTracking bool    `json:"readTracking"`
-		Theme        UITheme `json:"theme"`
+		SiteName     string        `json:"siteName"`
+		Description  string        `json:"description"`
+		Timeline     bool          `json:"timeline"`
+		ReadTracking bool          `json:"readTracking"`
+		Theme        UITheme       `json:"theme"`
+		Profile      ProfileConfig `json:"profile"`
 	}{
 		SiteName:     currentConfig.UI.SiteName,
 		Description:  currentConfig.UI.Description,
 		Timeline:     currentConfig.UI.Timeline,
 		ReadTracking: currentConfig.UI.ReadTracking,
 		Theme:        currentConfig.UI.Theme,
+		Profile:      currentConfig.Profile,
 	}
 
 	json.NewEncoder(w).Encode(uiConfig)
@@ -128,10 +130,12 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		SiteName    string
 		Description string
 		Theme       UITheme
+		Profile     ProfileConfig
 	}{
 		SiteName:    currentConfig.UI.SiteName,
 		Description: currentConfig.UI.Description,
 		Theme:       currentConfig.UI.Theme,
+		Profile:     currentConfig.Profile,
 	}
 
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))

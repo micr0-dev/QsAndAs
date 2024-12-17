@@ -217,10 +217,11 @@ button:hover {
     background: var(--surface);
     padding: 1rem;
     border-radius: 15px;
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
     display: flex;
     justify-content: space-around;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .stat-item {
@@ -1031,4 +1032,263 @@ button {
     .section-title {
         font-size: 0.8rem;
     }
+}
+
+.profile-card {
+    background: var(--surface);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, var(--profile-color-1), var(--profile-color-2));
+    opacity: 0.1;
+    z-index: 0;
+}
+
+.profile-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    position: relative;
+
+    margin-bottom: 1.5rem;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 60px;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-username {
+    position: relative;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg,
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)),
+        var(--dynamic-gradient);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradientAnimation 30s ease infinite;
+}
+
+.profile-username::before {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg,
+            rgba(0, 0, 0, 0.2),
+            rgba(0, 0, 0, 0.2)),
+        var(--dynamic-gradient);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradientAnimation 30s ease infinite;
+}
+
+.profile-bio {
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.profile-social {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .profile-card {
+        padding: 1.5rem;
+    }
+
+    .profile-header {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .profile-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        order: 2;
+        /* Move info below avatar */
+    }
+
+    .profile-username {
+        order: -1;
+        /* Move username to top */
+        font-size: 2.2rem;
+        margin-bottom: 0rem;
+    }
+
+    .profile-avatar {
+        margin: 0 auto;
+        width: 150px;
+        /* Slightly larger on mobile */
+        height: 150px;
+        border-radius: 75px;
+        order: 1;
+    }
+
+    .profile-bio {
+        text-align: center;
+        margin-top: 1rem;
+        order: 3;
+    }
+
+    .profile-social {
+        justify-content: center;
+        margin-top: 1.5rem;
+        gap: 0.8rem;
+    }
+
+    .social-link {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-link:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.social-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Platform-specific colors on hover */
+.social-link[data-platform="github"]:hover {
+    background: #333;
+}
+
+.social-link[data-platform="bluesky"]:hover {
+    background: #0560ff;
+}
+
+.social-link[data-platform="twitter"]:hover {
+    background: #1DA1F2;
+}
+
+.social-link[data-platform="mastodon"]:hover {
+    background: #6364FF;
+}
+
+.social-link[data-platform="kofi"]:hover {
+    background: #FF5E5B;
+}
+
+.social-link[data-platform="patreon"]:hover {
+    background: #F96854;
+}
+
+.social-link[data-platform="youtube"]:hover {
+    background: #FF0000;
+}
+
+.social-link[data-platform="instagram"]:hover {
+    background: #E4405F;
+}
+
+.social-link[data-platform="linkedin"]:hover {
+    background: #0077B5;
+}
+
+.social-link[data-platform="facebook"]:hover {
+    background: #1877F2;
+}
+
+.social-link[data-platform="twitch"]:hover {
+    background: #9146FF;
+}
+
+.social-link[data-platform="discord"]:hover {
+    background: #5865F2;
+}
+
+.social-link[data-platform="snapchat"]:hover {
+    background: #FFFC00;
+}
+
+.social-link[data-platform="tiktok"]:hover {
+    background: #010101;
+}
+
+.social-link[data-platform="whatsapp"]:hover {
+    background: #25D366;
+}
+
+.social-link[data-platform="telegram"]:hover {
+    background: #0088cc;
+}
+
+.social-link[data-platform="spotify"]:hover {
+    background: #1DB954;
+}
+
+.social-link[data-platform="soundcloud"]:hover {
+    background: #FF3300;
+}
+
+.social-link[data-platform="tumblr"]:hover {
+    background: #36465D;
+}
+
+.social-link[data-platform="pinterest"]:hover {
+    background: #E60023;
 }

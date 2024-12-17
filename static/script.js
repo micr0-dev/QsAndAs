@@ -79,7 +79,6 @@ class PostsWebSocket {
 const QuestionStatus = {
     getAsked: () => {
         const asked = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
-        console.log('Getting asked questions:', asked);
         return new Set(asked);
     },
 
@@ -87,14 +86,12 @@ const QuestionStatus = {
         const asked = QuestionStatus.getAsked();
         asked.add(questionId);
         localStorage.setItem('askedQuestions', JSON.stringify([...asked]));
-        console.log('Added asked question:', questionId);
     },
 
     removeAsked: (questionId) => {
         const asked = QuestionStatus.getAsked();
         asked.delete(questionId);
         localStorage.setItem('askedQuestions', JSON.stringify([...asked]));
-        console.log('Removed asked question:', questionId);
     },
 
     // New method to clean up answered questions
@@ -106,7 +103,6 @@ const QuestionStatus = {
             if (asked.has(q.id) && q.answered) {
                 asked.delete(q.id);
                 changed = true;
-                console.log('Removed answered question from asked:', q.id);
             }
         });
 
@@ -291,6 +287,13 @@ function updateDynamicColors(questions) {
     }
 
     document.documentElement.style.setProperty('--dynamic-color', colors[0]);
+
+    // Update profile card colors
+    const profileCard = document.querySelector('.profile-card');
+    if (profileCard) {
+        profileCard.style.setProperty('--profile-color-1', colors[0]);
+        profileCard.style.setProperty('--profile-color-2', colors[1]);
+    }
 }
 
 // Optional: Listen for changes in motion preference
@@ -337,6 +340,12 @@ async function refreshQuestions() {
 
         const container = document.getElementById('questions-container');
         container.innerHTML = '';
+
+        //clear the profile card
+        const profileCard = document.querySelector('.profile-card');
+        if (profileCard) {
+            profileCard.remove();
+        }
 
         // Create sections
         const requestedSection = document.createElement('div');
@@ -442,6 +451,15 @@ async function refreshQuestions() {
 
         // Setup intersection observer for read tracking
         setupReadTracking();
+
+        const cresponse = await fetch('/config');
+        const config = await cresponse.json();
+
+        const newProfileCard = createProfileCard(config.profile);
+        document.querySelector('.container').insertBefore(
+            newProfileCard,
+            document.querySelector('.ask-form')
+        );
 
         // Update dynamic colors with all questions
         updateDynamicColors(allQuestions);
@@ -609,7 +627,6 @@ function answerQuestion(id) {
 
 // Initial load
 refreshQuestions();
-document.querySelector('h1').setAttribute('data-text', document.querySelector('h1').textContent);
 
 let adminPanelVisible = false;
 
@@ -1102,3 +1119,214 @@ function createAttributionPanel() {
 
 // Initialize when the page loads
 document.addEventListener('DOMContentLoaded', createAttributionPanel);
+
+const ColorUtils = {
+    // Convert hex to RGB
+    hexToRGB(hex) {
+        let r = 0, g = 0, b = 0;
+
+        // Handle #RGB format
+        if (hex.length === 4) {
+            r = parseInt(hex[1] + hex[1], 16);
+            g = parseInt(hex[2] + hex[2], 16);
+            b = parseInt(hex[3] + hex[3], 16);
+        }
+        // Handle #RRGGBB format
+        else if (hex.length === 7) {
+            r = parseInt(hex.substring(1, 3), 16);
+            g = parseInt(hex.substring(3, 5), 16);
+            b = parseInt(hex.substring(5, 7), 16);
+        }
+
+        return { r, g, b };
+    },
+
+    // Convert RGB to HSL
+    rgbToHSL(r, g, b) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) {
+            h = s = 0;
+        } else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+            switch (max) {
+                case r:
+                    h = (g - b) / d + (g < b ? 6 : 0);
+                    break;
+                case g:
+                    h = (b - r) / d + 2;
+                    break;
+                case b:
+                    h = (r - g) / d + 4;
+                    break;
+            }
+
+            h /= 6;
+        }
+
+        return {
+            h: h * 360,
+            s: s * 100,
+            l: l * 100
+        };
+    },
+
+    // Convert HSL to RGB
+    hslToRGB(h, s, l) {
+        h /= 360;
+        s /= 100;
+        l /= 100;
+
+        let r, g, b;
+
+        if (s === 0) {
+            r = g = b = l;
+        } else {
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1 / 6) return p + (q - p) * 6 * t;
+                if (t < 1 / 2) return q;
+                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                return p;
+            };
+
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+
+        return {
+            r: Math.round(r * 255),
+            g: Math.round(g * 255),
+            b: Math.round(b * 255)
+        };
+    },
+
+    // Convert RGB to Hex
+    rgbToHex(r, g, b) {
+        const toHex = (c) => {
+            const hex = c.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        };
+
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+};
+
+function adjustHue(hex, degree) {
+    // Remove # if present
+    hex = hex.replace(/^#/, '');
+
+    // Convert hex to RGB
+    const rgb = ColorUtils.hexToRGB('#' + hex);
+
+    // Convert RGB to HSL
+    const hsl = ColorUtils.rgbToHSL(rgb.r, rgb.g, rgb.b);
+
+    // Adjust hue
+    hsl.h = (hsl.h + degree) % 360;
+    if (hsl.h < 0) hsl.h += 360;
+
+    // Convert back to RGB
+    const newRgb = ColorUtils.hslToRGB(hsl.h, hsl.s, hsl.l);
+
+    // Convert back to hex
+    return ColorUtils.rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+}
+
+class SocialLinks {
+    static platforms = {
+        github: {
+            icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>',
+        },
+        bluesky: {
+            icon: '<svg viewBox="0 0 600 530" fill="currentColor"><path d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"/></svg>',
+        },
+        twitter: {
+            icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>',
+        },
+        mastodon: {
+            icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path xmlns="http://www.w3.org/2000/svg" d="M21.327 8.566c0-4.339-2.843-5.61-2.843-5.61-1.433-.658-3.894-.935-6.451-.956h-.063c-2.557.021-5.016.298-6.45.956 0 0-2.843 1.272-2.843 5.61 0 .993-.019 2.181.012 3.441.103 4.243.778 8.425 4.701 9.463 1.809.479 3.362.579 4.612.51 2.268-.126 3.541-.809 3.541-.809l-.075-1.646s-1.621.511-3.441.449c-1.804-.062-3.707-.194-3.999-2.409a4.523 4.523 0 0 1-.04-.621s1.77.433 4.014.536c1.372.063 2.658-.08 3.965-.236 2.506-.299 4.688-1.843 4.962-3.254.434-2.223.398-5.424.398-5.424zm-3.353 5.59h-2.081V9.057c0-1.075-.452-1.62-1.357-1.62-1 0-1.501.647-1.501 1.927v2.791h-2.069V9.364c0-1.28-.501-1.927-1.502-1.927-.905 0-1.357.546-1.357 1.62v5.099H6.026V8.903c0-1.074.273-1.927.823-2.558.566-.631 1.307-.955 2.228-.955 1.065 0 1.872.409 2.405 1.228l.518.869.519-.869c.533-.819 1.34-1.228 2.405-1.228.92 0 1.662.324 2.228.955.549.631.822 1.484.822 2.558v5.253z"/></svg>',
+        },
+        kofi: {
+            icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/></svg>',
+        },
+        spotify: {
+            icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path xmlns="http://www.w3.org/2000/svg" d="M19.098 10.638c-3.868-2.297-10.248-2.508-13.941-1.387-.593.18-1.22-.155-1.399-.748-.18-.593.154-1.22.748-1.4 4.239-1.287 11.285-1.038 15.738 1.605.533.317.708 1.005.392 1.538-.316.533-1.005.709-1.538.392zm-.126 3.403c-.272.44-.847.578-1.287.308-3.225-1.982-8.142-2.557-11.958-1.399-.494.15-1.017-.129-1.167-.623-.149-.495.13-1.016.624-1.167 4.358-1.322 9.776-.682 13.48 1.595.44.27.578.847.308 1.286zm-1.469 3.267c-.215.354-.676.465-1.028.249-2.818-1.722-6.365-2.111-10.542-1.157-.402.092-.803-.16-.895-.562-.092-.403.159-.804.562-.896 4.571-1.045 8.492-.595 11.655 1.338.353.215.464.676.248 1.028zm-5.503-17.308c-6.627 0-12 5.373-12 12 0 6.628 5.373 12 12 12 6.628 0 12-5.372 12-12 0-6.627-5.372-12-12-12z"/></svg>',
+        },
+
+    };
+
+    static createSocialLinks(links = {}) {
+        // Check if links exist
+        if (!links || Object.keys(links).length === 0) {
+            console.log('No social links configured');
+            return '';
+        }
+
+        return Object.entries(links).map(([platform, url]) => {
+            // Skip empty URLs
+            if (!url) return '';
+
+            const platformInfo = this.platforms[platform] || {
+                icon: '<svg viewBox="0 -960 960 960" fill="currentColor"><path xmlns="http://www.w3.org/2000/svg" d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-82v-78q-33 0-56.5-23.5T360-320v-40L168-552q-3 18-5.5 36t-2.5 36q0 121 79.5 212T440-162Zm276-102q20-22 36-47.5t26.5-53q10.5-27.5 16-56.5t5.5-59q0-98-54.5-179T600-776v16q0 33-23.5 56.5T520-680h-80v80q0 17-11.5 28.5T400-560h-80v80h240q17 0 28.5 11.5T600-440v120h40q26 0 47 15.5t29 40.5Z"/></svg>',
+                domain: platform
+            };
+
+            return `
+            <a href="${url}" 
+               class="social-link" 
+               data-platform="${platform}"
+               target="_blank" 
+               rel="noopener noreferrer">
+                ${platformInfo.icon}
+                <span>${toTitleCase(platform)}</span>
+            </a>
+        `;
+        }).filter(link => link).join('');
+    }
+}
+
+function toTitleCase(str) {
+    return str.replace(
+        /\w\S*/g,
+        text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+    );
+}
+
+
+function createProfileCard(profile) {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+
+    card.innerHTML = `
+        <div class="profile-header">
+        <div class="profile-avatar">
+                <img src="${profile.Avatar}" alt="${profile.Username}" />
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-username">${profile.Username}</h1>
+                <div class="profile-bio">
+                    ${profile.Bio}
+                </div>
+            </div>
+        </div>
+        <div class="profile-social">
+            ${SocialLinks.createSocialLinks(profile.Social)}
+        </div>
+    `;
+
+    return card;
+}

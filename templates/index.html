@@ -10,6 +10,7 @@
             --text-secondary: {{.Theme.TextMuted}};
             --surface: {{.Theme.Surface}};
             --background: {{.Theme.Background}};
+            --accent-color: {{.Profile.AccentColor}};
         }
     </style>
     <meta name="description" content="{{.Description}}">
@@ -32,8 +33,6 @@
                 <div class="stat-label">Response Rate</div>
             </div>
         </div>
-
-        <h1>{{.SiteName}}</h1>
 
         <div class="ask-form">
             <textarea id="question-input" placeholder="Ask your question here... "></textarea>

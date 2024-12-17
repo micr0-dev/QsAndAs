@@ -4,6 +4,7 @@ go 1.21.11
 
 require (
 	github.com/BurntSushi/toml v1.4.0
+	github.com/EdlinOrg/prominentcolor v1.0.0
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.1
@@ -14,4 +15,9 @@ require (
 	golang.org/x/time v0.8.0
 )
 
-require golang.org/x/sys v0.28.0 // indirect
+require (
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
+	github.com/oliamb/cutter v0.2.2 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+)
