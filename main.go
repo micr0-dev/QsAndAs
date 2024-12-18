@@ -90,7 +90,7 @@ func main() {
 	answerHandler := adminAuthMiddleware(handleAnswer)
 	r.HandleFunc("/answer", answerHandler).Methods("POST")
 
-	r.HandleFunc("/questions", handleGetQuestions).Methods("GET") // This one handles auth internally
+	r.HandleFunc("/questions", handleGetQuestions).Methods("GET")
 	r.HandleFunc("/questions/{id}", handleGetQuestion).Methods("GET")
 
 	r.HandleFunc("/config", handleConfig).Methods("GET")

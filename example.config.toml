@@ -21,7 +21,7 @@ token_duration = "720h"
 
 [limits]
 questions_per_hour = 6
-questions_burst = 2
+questions_burst = 6
 
 [ui]
 site_name = "Anonymous Q&A"
